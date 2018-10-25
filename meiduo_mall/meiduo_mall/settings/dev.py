@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 将apps添加到搜索包的列表中
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
-print(sys.path)
+# print(sys.path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -43,13 +43,14 @@ INSTALLED_APPS = [
 
     'rest_framework',
 
-    'meiduo_mall.apps.users.apps.UsersConfig',
-    # 'users.apps.UsersConfig',
+    # 'meiduo_mall.apps.users.apps.UsersConfig',
+    'users.apps.UsersConfig',
+    'verifications.apps.VerificationsConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Django默认启用Session
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -82,7 +83,7 @@ WSGI_APPLICATION = 'meiduo_mall.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.mysql',  # 选择mysql数据库
         'HOST': '127.0.0.1',  # 数据库主机
         'PORT': 3306,  # 数据库端口
         'USER': 'meiduo',  # 数据库用户名
@@ -109,8 +110,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# 配置缓存信息存储位置
-CACHS = {
+# 本机缓存存储容器选择为redis
+CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/0",
@@ -120,12 +121,24 @@ CACHS = {
     },
     "session": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://10.211.55.5:6379/1",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    "verify_codes": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
+
+# 设置session信息存储在本地缓存中
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# 选择redis种的'session'空间
+SESSION_CACHE_ALIAS = "session"
 
 LOGGING = {
     'version': 1,
@@ -156,7 +169,7 @@ LOGGING = {
             'filename': os.path.join(os.path.dirname(BASE_DIR), "logs/meiduo.log"),  # 日志文件的位置
             'maxBytes': 300 * 1024 * 1024,
             'backupCount': 10,
-            'formatter': 'verbose'
+            'formatter': 'verbose'  # 选择日志格式为verbose
         },
     },
     'loggers': {  # 日志器
@@ -168,12 +181,21 @@ LOGGING = {
     }
 }
 
+# 输出日志方法: 同时向终端及文件中打印日志
+# import logging
+# logger = logging.getLogger('django')
+# logger.info('INFO Message')
+# logger.error('ERRO Message')
+# logger.debug('DEBUG Message')
+
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'Asia-Shanghai'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -188,6 +210,8 @@ STATIC_URL = '/static/'
 
 # DRF框架全局配置
 REST_FRAMEWORK = {
-    # 异常处理
+    # 指定DRF框架异常处理的函数
     'EXCEPTION_HANDLER': 'meiduo_mall.utils.exceptions.exception_handler',
 }
+
+AUTH_USER_MODEL = 'users.User'
