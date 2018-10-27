@@ -30,22 +30,34 @@ class SMSCodeView(APIView):
         4、返回响应
         :return:
         """
+        # 判断60s内是否曾发过验证码
+        redis_coon = get_redis_connection('verify_codes')
+        if redis_coon.get('send_flag_%s' % mobile):
+            return Response({'message': '发送短信过于频繁'})
         # 构造短信验证码
         sms_code = "%06d" % random.randint(1, 999999)
         print(sms_code)
-        # 使用云通讯给'mobile'发送短信
-        redis_coon = get_redis_connection('verify_codes')
+        # 使用redis管道同时保存短信码及60s内发送过短信的标志
+        pl = redis_coon.pipeline()
         redis_coon.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
-        # 在redis种保存短信验证码内容 'mobile':'验证码'
-        try:
-            result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES//60], constants.SMS_CODE_TEMP_ID)
-        except Exception as e:
-            logger.error(e)
-            return Response({'message': '发送短信异常'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        redis_coon.setex('send_flag_%s' % mobile, constants.SEND_SMS_CODE_INTERVAL, 1)
+        pl.execute()
+        # 在redis中保存短信验证码内容 'mobile':'验证码'
+        # redis_coon = get_redis_connection('verify_codes')
+        # redis_coon.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        # # 使用云通讯给'mobile'发送短信
+        # try:
+        #     result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES//60], constants.SMS_CODE_TEMP_ID)
+        # except Exception as e:
+        #     logger.error(e)
+        #     return Response({'message': '发送短信异常'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        #
+        # if result != 0:
+        #     return Response({'message': '发送短信失败'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if result != 0:
-            return Response({'message': '发送短信失败'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-        # 返回响应
+        from celery_tasks.sms.tasks import send_sms_codes
+        # 发送任务函数及参数至中间人redis任务队列中 调用worker进行短信发送工作
+        send_sms_codes.delay(mobile, sms_code, constants.SMS_CODE_REDIS_EXPIRES)
+        # 直接返回响应
         return Response({'message': '发送短信成功'})
 
