@@ -14,6 +14,8 @@ import os
 import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import datetime
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 将apps添加到搜索包的列表中
@@ -216,7 +218,27 @@ STATIC_URL = '/static/'
 REST_FRAMEWORK = {
     # 指定DRF框架异常处理的函数
     'EXCEPTION_HANDLER': 'meiduo_mall.utils.exceptions.exception_handler',
+    # 设置DRF框架认证方式
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # JWT认证方式
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+
 }
+
+# JWT参数设置
+JWT_AUTH = {
+    # 设置JWT TOKEN有效期
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+    # 修改JWT配置的登录过程生成响应的函数为自定义
+    'JWT_RESPONSE_PAYLOAD_HANDLER':
+    'users.utils.jwt_response_payload_handler',
+}
+
+# 设置Django的认证后端类为自定义
+AUTHENTICATION_BACKENDS = ['users.utils.UsernameMobileAuthBackend']
 
 # 设置自定义用户模型类  '子应用名：模型类名'
 AUTH_USER_MODEL = 'users.User'
