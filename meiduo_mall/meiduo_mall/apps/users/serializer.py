@@ -1,5 +1,4 @@
 import re
-from rest_framework_jwt.settings import api_settings
 from django_redis import get_redis_connection
 from rest_framework import serializers
 from users.models import User
@@ -10,6 +9,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(label='重复密码', write_only=True)
     sms_code = serializers.CharField(label='短信验证码', write_only=True)
     allow = serializers.CharField(label='同意协议', write_only=True)
+    token = serializers.CharField(label='jswtoken', write_only=True)
 
     class Meta:
         model = User
@@ -53,12 +53,12 @@ class CreateUserSerializer(serializers.ModelSerializer):
         # 验证两次密码是否相同
         password = attrs['password']
         password2 = attrs['password2']
-        sms_code = attrs['sms_code']
-        mobile = attrs['mobile']
         if password != password2:
             raise serializers.ValidationError('两次密码不一致')
         # 验证短信验证码
+        sms_code = attrs['sms_code']
         redis_coon = get_redis_connection('verify_codes')
+        mobile = attrs['mobile']
         real_sms_code = redis_coon.get('sms_%s' % mobile)
         if not real_sms_code:
             raise serializers.ValidationError('短信验证码已过期')
@@ -77,6 +77,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         # user.set_password(validated_data['password'])
         # user.save()
 
+        from rest_framework_jwt.settings import api_settings
         # 创建组织payload载荷的方法
         jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
         # 创建生成jwt token数据的方法
@@ -88,6 +89,12 @@ class CreateUserSerializer(serializers.ModelSerializer):
         token = jwt_encode_handler(payload)
 
         user.token = token
-        user.save()
 
         return user
+
+
+# 定义用户个人信息序列化器
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'email_active', 'mobile')

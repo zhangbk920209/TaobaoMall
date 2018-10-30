@@ -1,16 +1,16 @@
 from rest_framework import status
-from rest_framework.generics import GenericAPIView, CreateAPIView
+from rest_framework.generics import GenericAPIView, CreateAPIView, RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import User
-from users.serializer import CreateUserSerializer
+from users.serializer import CreateUserSerializer, UserDataSerializer
 
 
-# 判断用户名是否被注册接口
 # GET /usernames/(?P<username>\w{5,20})/count/
 class UsernameCountView(APIView):
     def get(self, request, username):
-        count = User.objects.filter(username=username).count()
+        count = User.objects.filter(username__exact=username).count()
         # return Response({'message': '用户名已注册'})
         data = {
             'username': username,
@@ -22,7 +22,7 @@ class UsernameCountView(APIView):
 # GET /mobiles/(?P<mobile>1[3-9]\d{9})/count/
 class MobileCountView(APIView):
     def get(self, request, mobile):
-        count = User.objects.filter(mobile=mobile).count()
+        count = User.objects.filter(mobile__exact=mobile).count()
         data = {
             'mobile': mobile,
             'count': count
@@ -33,7 +33,7 @@ class MobileCountView(APIView):
 # POST /users/
 class UsersView(CreateAPIView):
     serializer_class = CreateUserSerializer
-
+    #
     # def post(self, request):
     #     """
     #     注册用户信息的保存:
@@ -45,3 +45,30 @@ class UsersView(CreateAPIView):
     #     serializer.is_valid(raise_exception=True)
     #     serializer.save()
     #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# GET /user/
+class UserDetailView(RetrieveAPIView):
+    # 设置权限等级
+    permission_classes = [IsAuthenticated]
+    # 设置序列化器类
+    serializer_class = UserDataSerializer
+
+    # 重写父类get_object方法
+    def get_object(self):
+        return self.request.user
+
+    # def get(self, request):
+    #     """
+    #     获取登录用户基本信息：
+    #     1.获取登录用户user
+    #     2.将用户数据序列化返回
+    #     :return:
+    #     """
+    #
+    #     # user = request.user
+    #     user = self.get_object()
+    #     serializer = self.get_serializer(user)
+    #     return Response(serializer.data)
+
+

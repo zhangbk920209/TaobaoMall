@@ -37,7 +37,7 @@ class SMSCodeView(APIView):
         # 构造短信验证码
         sms_code = "%06d" % random.randint(1, 999999)
         print(sms_code)
-        # 使用redis管道同时保存短信码及60s内发送过短信的标志
+        # 使用redis管道一次性保存短信码及60s内发送过短信的标志, 减少链接reids数据库的次数
         pl = redis_coon.pipeline()
         redis_coon.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
         redis_coon.setex('send_flag_%s' % mobile, constants.SEND_SMS_CODE_INTERVAL, 1)

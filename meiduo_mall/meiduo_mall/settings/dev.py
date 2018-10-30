@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # 'meiduo_mall.apps.users.apps.UsersConfig',
     'users.apps.UsersConfig',
     'verifications.apps.VerificationsConfig',
+    'oauth.apps.OauthConfig'
 ]
 
 MIDDLEWARE = [
@@ -228,13 +229,19 @@ REST_FRAMEWORK = {
 
 }
 
+# QQ登录参数
+QQ_CLIENT_ID = '101474184'
+QQ_CLIENT_SECRET = 'c6ce949e04e12ecc909ae6a8b09b637c'
+QQ_REDIRECT_URI = 'http://www.meiduo.site:8080/oauth_callback.html'
+QQ_STATE = '/'
+
 # JWT参数设置
 JWT_AUTH = {
     # 设置JWT TOKEN有效期
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
     # 修改JWT配置的登录过程生成响应的函数为自定义
     'JWT_RESPONSE_PAYLOAD_HANDLER':
-    'users.utils.jwt_response_payload_handler',
+        'users.utils.jwt_response_payload_handler',
 }
 
 # 设置Django的认证后端类为自定义
