@@ -32,12 +32,12 @@ var vm = new Vue({
                     localStorage.clear();
                     localStorage.user_id = response.data.user_id;
                     localStorage.username = response.data.username;
-                    localStorage.secret_openid = response.data.secret_openid;
+                    localStorage.token = response.data.token;
                     var state = this.get_query_string('state');
                     location.href = state;
                 } else {
                     // 用户未绑定
-                    this.secret_openid = response.data.secret_openid;
+                    this.access_token = response.data.access_token;
                     this.is_show_waiting = false;
                 }
             })
@@ -141,7 +141,7 @@ var vm = new Vue({
                         password: this.password,
                         mobile: this.mobile,
                         sms_code: this.sms_code,
-                        secret_openid: this.secret_openid
+                        access_token: this.access_token
                     }, {
                         responseType: 'json',
                     })

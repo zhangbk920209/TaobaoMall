@@ -75,6 +75,10 @@ class OAuthQQUserSerializer(serializers.ModelSerializer):
             password = validated_data['password']
             user = User.objects.create_user(mobile=mobile, password=password, username=username)
 
+        # 获取类视图的对象，给类视图对象增加属性user，用来保存绑定用户对象
+        # 以便在类视图中可以直接通过`self.user`获取绑定用户对象
+        self.context['view'].user = user
+
         openid = validated_data['openid']
         OAuthQQUser.objects.create(openid=openid, user=user)
 

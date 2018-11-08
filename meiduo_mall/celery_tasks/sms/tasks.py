@@ -19,6 +19,6 @@ def send_sms_codes(mobile, sms_code, expire):
 
     else:
         if result != 0:
-            logger.warning("发送验证码短信[失败][ mobile: %s ]" % mobile)
+            logger.warning("发送短信验证码[失败][ mobile: %s ]" % mobile)
         else:
-            logger.info("发送验证码短信[正常][ mobile: %s ]" % mobile)
+            logger.info("发送短信验证码[正常][ mobile: %s ]" % mobile)

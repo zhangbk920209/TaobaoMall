@@ -43,14 +43,24 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'rest_framework',
-    # 支持跨域请求的应用
-    'corsheaders',
+    'rest_framework', # DRF框架
+    'corsheaders', # 支持跨域请求的应用
+    'ckeditor',  # 富文本编辑器
+    'ckeditor_uploader',  # 富文本编辑器上传图片模块
+    'django_crontab', # 定时任务
+    'haystack', # 全文检索框架
 
     # 'meiduo_mall.apps.users.apps.UsersConfig',
     'users.apps.UsersConfig',
     'verifications.apps.VerificationsConfig',
-    'oauth.apps.OauthConfig'
+    'oauth.apps.OauthConfig',
+    'areas.apps.AreasConfig',
+    'content.apps.ContentConfig',
+    'goods.apps.GoodsConfig',
+    'pictest.apps.PictestConfig',
+    'cart.apps.CartConfig',
+    'orders.apps.OrdersConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -70,7 +80,8 @@ ROOT_URLCONF = 'meiduo_mall.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 设置模板文件存放的路径
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -82,6 +93,9 @@ TEMPLATES = [
         },
     },
 ]
+
+
+
 
 WSGI_APPLICATION = 'meiduo_mall.wsgi.application'
 
@@ -133,13 +147,30 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     },
+    # 存储用户注册验证数据
     "verify_codes": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
-    }
+    },
+    # 存储用户浏览记录
+    "history": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/4",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    # 存储用户购物车数据
+    "cart": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/5",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
 }
 
 # 设置session信息存储在本地缓存中
@@ -226,6 +257,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+    # 指定DRF框架的全局分页类
+    'DEFAULT_PAGINATION_CLASS': 'meiduo_mall.utils.pagination.StandarResultPagination',
 
 }
 
@@ -258,3 +291,69 @@ CORS_ORIGIN_WHITELIST = (
 )
 # 跨域请求过程是否允许携带cookie
 CORS_ALLOW_CREDENTIALS = True
+
+
+# 发送邮件配置
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# SMTP服务器地址
+EMAIL_HOST = 'smtp.163.com'
+# SMTP服务端口
+EMAIL_PORT = 25
+# 发送邮件的邮箱
+EMAIL_HOST_USER = 'smartli_it@163.com'
+# 在邮箱中设置的客户端授权密码
+EMAIL_HOST_PASSWORD = 'smart123'
+# 收件人看到的发件人f
+EMAIL_FROM = '美多商城<smartli_it@163.com>'
+
+
+
+# drf-extension扩展设置查询数据的缓存有效期及存储空间
+REST_FRAMEWORK_EXTENSIONS = {
+    # 缓存时间
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 60,
+    # 缓存存储
+    'DEFAULT_USE_CACHE': 'default',
+}
+
+
+
+# django文件存储使用的自定义类
+DEFAULT_FILE_STORAGE = 'meiduo_mall.utils.fastdfs.fdfs_storage.FastDFSStorage'
+
+# 通常建立Storage时会在Storage服务器上再搭建一个Nginx系统，浏览器访问时只需访问Nginx即可, 在服务器/etc/hosts上设置域名,并配置FDFS_URL为服务器域名8888端口
+FDFS_URL = 'http://image.meiduo.site:8888/'
+# FDFS客户端配置文件路径
+FDFS_CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
+
+
+# 富文本编辑器ckeditor配置
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',  # 工具条功能
+        'height': 300,  # 编辑器高度
+        # 'width': 300,  # 编辑器宽
+    },
+}
+CKEDITOR_UPLOAD_PATH = ''  # 上传图片保存路径，使用了FastDFS，所以此处设为''
+
+# 定时任务
+CRONJOBS = [
+    # 每1分钟执行一次生成主页静态文件   时间/使用静态化函数/日志路径
+    ('*/1 * * * *', 'content.crons.generate_static_index_html', '>> ' + os.path.dirname(BASE_DIR) + '/logs/crontab.log')
+]
+
+# 生成的静态html文件保存目录
+GENERATED_STATIC_HTML_FILES_DIR = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), 'front_end_pc')
+
+# Haystack全文检索框架的配置
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
+        'URL': 'http://192.168.126.128:9200/',  # 此处为elasticsearch运行的服务器ip地址，端口号固定为9200
+        'INDEX_NAME': 'meiduo',  # 指定elasticsearch建立的索引库的名称
+    },
+}
+
+# 当添加、修改、删除数据时，自动生成索引
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

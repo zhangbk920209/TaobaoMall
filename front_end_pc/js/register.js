@@ -42,7 +42,11 @@ var vm = new Vue({
                         if (response.data.count > 0) {
                             this.error_name_message = '用户名已存在';
                             this.error_name = true;
-                        } else {
+                        }
+                        else if(response.data.legal == 0){
+                            this.error_name_message = '用户名必须为数字字母下划线的组合！';
+                            this.error_name = true;
+                        }else {
                             this.error_name = false;
                         }
                     })

@@ -30,6 +30,7 @@ class SMSCodeView(APIView):
         4、返回响应
         :return:
         """
+
         # 判断60s内是否曾发过验证码
         redis_coon = get_redis_connection('verify_codes')
         if redis_coon.get('send_flag_%s' % mobile):
@@ -60,4 +61,22 @@ class SMSCodeView(APIView):
         send_sms_codes.delay(mobile, sms_code, constants.SMS_CODE_REDIS_EXPIRES)
         # 直接返回响应
         return Response({'message': '发送短信成功'})
-
+        # redis_coon = get_redis_connection('verify_codes')
+        # flag = redis_coon.get('mobile_%s' % mobile)
+        # if flag:
+        #     return Response({'message': '发送短信过于频繁'}, status=status.HTTP_400_BAD_REQUEST)
+        # sms_code = '%06d' % random.randint(0, 999999)
+        # print(sms_code)
+        # pl = redis_coon.pipeline()
+        # redis_coon.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        # redis_coon.setex('mobile_%s' % mobile, constants.SEND_SMS_CODE_INTERVAL, mobile)
+        # pl.execute()
+        # ccp = CCP()
+        # try:
+        #     res = ccp.send_template_sms(mobile, [sms_code, constants.SEND_SMS_CODE_INTERVAL//60], constants.SMS_CODE_TEMP_ID)
+        # except Exception as e:
+        #     logger.error(e)
+        #     return Response({'message': '发送短信异常'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        # if res != 0:
+        #     return Response({'message': '短信发送失败'}, status=status.HTTP_503_BAD_REQUEST)
+        # return Response(status=status.HTTP_200_OK)
